@@ -1,0 +1,384 @@
+#pretratment
+# install glmGamPoi
+#if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+#BiocManager::install("glmGamPoi")
+# install sctransform from Github
+#install.packages("sctransform")
+
+#install.packages("devtools")
+#devtools::install_github("satijalab/sctransform", ref = "develop")
+table(olp.integrated$orig.ident,olp.integrated$tcell_type)
+olp.integrated$merge<-olp.integrated$orig.ident
+olp.integrated$merge<-paste0(olp.integrated$orig.ident,'_',olp.integrated$tcell_type,sep='')
+table(olp.integrated$merge,olp.integrated$pheno)
+#devtools::install_github('satijalab/seurat-data')
+table(olp.integrated$orig.ident,olp.integrated$tcell_type)
+olp.integrated$merge<-olp.integrated$orig.ident
+olp.integrated$merge<-paste0(olp.integrated$orig.ident,'_',olp.integrated$tcell_type,sep='')
+table(olp.integrated$merge,olp.integrated$pheno)
+#devtools::install_github('satijalab/seurat-data')
+library(Seurat)
+#library(SeuratData)
+library(patchwork)
+library(dplyr)
+library(ggplot2)
+library(glmGamPoi)
+d10x.olp1 <- Read10X("original data/EOLP-1/") #REOLP1
+d10x.olp2 <- Read10X("original data/EOLP-2/")#REOLP2
+d10x.olp3 <- Read10X("original data/NOLP-1/") #REOLP3,
+d10x.olp4 <- Read10X("original data/NOLP-2/")#NREOLP1
+d10x.olp5 <- Read10X("original data/NOLP-3/")#NREOLP2
+d10x.olp6 <- Read10X("original data/OLP01_QH/")#NREOLP3 
+d10x.olp7 <- Read10X("original data/REOLP_LSQ_1222/")#REOLP4
+d10x.olp8 <- Read10X("original data/REOLP_LJ_1229/")#REOLP5
+d10x.olp9 <- Read10X("original data/REOLP_GWF_0116/")#REOLP6
+d10x.olp10 <- Read10X("original data/NREOLP_CT_1122/")#NREOLP4
+saveRDS(olp.integrated_tcell,'olp.integrated_tcell.rds')
+
+d10x.normal1 <- Read10X("original data/Normal/")
+d10x.normal2 <- Read10X("original data/N31/")
+d10x.normal3 <- Read10X("original data/N32/")
+
+olp1 <- CreateSeuratObject(counts = d10x.olp1, project = "REOLP_1", min.cells = 3, min.features = 200)
+olp2 <- CreateSeuratObject(counts = d10x.olp2, project = "REOLP_2", min.cells = 3, min.features = 200)
+olp3 <- CreateSeuratObject(counts = d10x.olp3, project = "REOLP_3", min.cells = 3, min.features = 200)
+olp4 <- CreateSeuratObject(counts = d10x.olp4, project = "NREOLP_1", min.cells = 3, min.features = 200)
+olp5 <- CreateSeuratObject(counts = d10x.olp5, project = "NREOLP_2", min.cells = 3, min.features = 200)
+olp6 <- CreateSeuratObject(counts = d10x.olp6, project = "NREOLP_3", min.cells = 3, min.features = 200)
+
+olp7 <- CreateSeuratObject(counts = d10x.olp7, project = "REOLP_4", min.cells = 3, min.features = 200)
+olp8 <- CreateSeuratObject(counts = d10x.olp8, project = "REOLP_5", min.cells = 3, min.features = 200)
+olp9 <- CreateSeuratObject(counts = d10x.olp9, project = "REOLP_6", min.cells = 3, min.features = 200)
+olp10 <- CreateSeuratObject(counts = d10x.olp10, project = "NREOLP_4", min.cells = 3, min.features = 200)
+
+normal1 <- CreateSeuratObject(counts = d10x.normal1, project = "Normal_1", min.cells = 3, min.features = 200)
+normal2 <- CreateSeuratObject(counts = d10x.normal2, project = "Normal_2", min.cells = 3, min.features = 200)
+normal3 <- CreateSeuratObject(counts = d10x.normal3, project = "Normal_3", min.cells = 3, min.features = 200)
+
+olp.integrated<- merge(olp1,y=c(olp2,olp3,olp4,olp5,olp6,olp7,olp8,olp9,olp10,normal1,normal2,normal3),
+                       add.cell.ids =c('REOLP_1','REOLP_2','REOLP_3','NREOLP_1','NREOLP_2','NREOLP_3',
+                                       'REOLP_4','REOLP_5','REOLP_6','NREOLP_4',
+                                       'Normal_1','Normal_2','Normal_3'),project='olp')
+
+
+tail(colnames(olp.integrated))
+table(olp.integrated$orig.ident)
+colnames(olp.integrated )
+olp.integrated@meta.data[["pheno"]] <- olp.integrated@meta.data[["orig.ident"]]
+olp.integrated$pheno[olp.integrated$pheno=='REOLP_1'|olp.integrated$pheno=='REOLP_2'|
+                       olp.integrated$pheno=='REOLP_3'|olp.integrated$pheno=='REOLP_4'|
+                       olp.integrated$pheno=='REOLP_5'|olp.integrated$pheno=='REOLP_6'
+]<- 'REOLP'
+olp.integrated$pheno[olp.integrated$pheno=='NREOLP_1'|olp.integrated$pheno=='NREOLP_2'|
+                       olp.integrated$pheno=='NREOLP_3'|olp.integrated$pheno=='NREOLP_4'
+]<- 'NREOLP'
+normal2 [["percent.mt"]] <- PercentageFeatureSet(normal2, pattern = "^MT-")
+olp.integrated [["percent.mt"]] <- PercentageFeatureSet(olp.integrated , pattern = "^MT-")
+
+head(olp.integrated @meta.data)
+col.num <- length(unique(olp.integrated @meta.data$pheno))
+Idents(olp.integrated )<-'pheno'
+violiseu <- VlnPlot(olp.integrated ,
+                    features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+                    cols =rainbow(col.num),
+                    pt.size = 0, 
+                    ncol = 3) +
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+violiseu
+
+#plot the percentage of percent.mt
+mito_distribution <- function(seurat_object){
+  metadata <- seurat_object@meta.data
+  metadata %>% 
+    ggplot(aes(color=nCount_RNA , x=percent.mt, fill=nCount_RNA )) + 
+    geom_histogram()+
+    geom_density(size=1)+
+    xlim(min(seurat_object$percent.mt), 25)
+  
+}
+#mito_distribution(normal2)
+mito_distribution(olp.integrated)
+aa<- olp.integrated$percent.mt
+aa<- ifelse(aa>15,1,0)
+table(aa)
+
+olp.integrated  <- subset(olp.integrated , subset = nFeature_RNA > 200  & nCount_RNA > 500 & percent.mt < 15)
+names(olp.integrated@meta.data)
+#table(olp.integrated$orig.ident,olp.integrated$Cell_type)
+olp1 <-subset(olp.integrated ,orig.ident=='REOLP_1')
+olp2 <-subset(olp.integrated ,orig.ident=='REOLP_2')
+olp3 <-subset(olp.integrated ,orig.ident=='REOLP_3')
+olp4 <-subset(olp.integrated ,orig.ident=='NREOLP_1')
+olp5 <-subset(olp.integrated ,orig.ident=='NREOLP_2')
+olp6 <-subset(olp.integrated ,orig.ident=='NREOLP_3')
+
+olp7 <-subset(olp.integrated ,orig.ident=='REOLP_4')
+olp8 <-subset(olp.integrated ,orig.ident=='REOLP_5')
+olp9 <-subset(olp.integrated ,orig.ident=='REOLP_6')
+olp10 <-subset(olp.integrated ,orig.ident=='NREOLP_4')
+
+
+normal1 <-subset(olp.integrated ,orig.ident=='Normal_1')
+normal2 <-subset(olp.integrated ,orig.ident=='Normal_2')
+normal3 <-subset(olp.integrated ,orig.ident=='Normal_3')
+olp1 <- SCTransform(olp1, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp2 <- SCTransform(olp2, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp3 <- SCTransform(olp3, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp4 <- SCTransform(olp4, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp5 <- SCTransform(olp5, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp6 <- SCTransform(olp6, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+
+olp7 <- SCTransform(olp7, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp8 <- SCTransform(olp8, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp9 <- SCTransform(olp9, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+olp10 <- SCTransform(olp10, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+
+normal1 <- SCTransform(normal1, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+normal2 <- SCTransform(normal2, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+
+normal3 <- SCTransform(normal3, vst.flavor = "v2", verbose = FALSE) %>%
+  RunPCA(npcs = 30, verbose = FALSE)
+
+# rm()+gc() 
+options(future.globals.maxSize= 8221225472)
+olp.list<-list(olp1=olp1,olp2=olp2,olp3=olp3,olp4=olp4,olp5=olp5,
+               olp6=olp6,olp7=olp7,olp8=olp8,olp9=olp9,olp10=olp10,
+               normal1=normal1,normal2=normal2,normal3=normal3 )
+
+
+features <- SelectIntegrationFeatures(object.list = olp.list, nfeatures = 3000)
+olp.list <- PrepSCTIntegration(object.list = olp.list, anchor.features = features)
+
+
+save.image("olp original data_13sample.RData")
+library(Seurat)
+olp.anchors <- FindIntegrationAnchors(object.list = olp.list, normalization.method = "SCT",
+                                      anchor.features = features)#,
+# reference = reference_dataset)#100% elapsed=01h 15min
+saveRDS(olp.anchors,'olp.anchors_13 no reference.rds')
+library(Seurat)
+olp.anchors<- readRDS('olp.anchors_13 no reference.rds')
+olp.combined.sct<- IntegrateData(anchorset = olp.anchors, normalization.method = "SCT")
+
+saveRDS(olp.combined.sct,'olp.combined.sct.rds')
+##note:this is different 'olp.integrated' between head code and the next code.
+library(Seurat)
+#library(SeuratData)
+library(patchwork)
+library(dplyr)
+library(ggplot2)
+library(glmGamPoi)
+#total annotation
+olp.integrated<- readRDS('olp.combined.rds')
+olp.integrated<- olp.combined.sct
+#Perform an integrated analysis
+set.seed(123456)
+DefaultAssay(olp.integrated) <- "integrated"
+olp.integrated <- RunPCA(olp.integrated, verbose = FALSE)
+olp.integrated <- RunUMAP(olp.integrated, reduction = "pca", dims = 1:30, verbose = FALSE)
+olp.integrated <- RunTSNE(olp.integrated, reduction = "pca", dims = 1:30, verbose = FALSE)
+olp.integrated <- FindNeighbors(olp.integrated, reduction = "pca", dims = 1:30)
+olp.integrated <- FindClusters(olp.integrated, resolution = 0.1)
+olp.integrated <- FindClusters(olp.integrated, resolution = 0.4)
+# olp.integrated <- FindClusters(olp.integrated, resolution = 0.1)
+DimPlot(olp.integrated, reduction = "umap", 
+        group.by = "integrated_snn_res.0.1", 
+        label = TRUE,label.size = 5,raster=F)#, repel = TRUE
+
+DefaultAssay(olp.integrated) <- "SCT"
+olp.integrated <- PrepSCTFindMarkers(olp.integrated)
+saveRDS(olp.integrated ,'olp.integrated.rds')
+markers.to.plot <- c(  "KRT14",'KRT10', "KRT5" ,
+                       'HLA-DPB1', 'CD14', 'CD68','ITGAM', #mye
+                       "CD3D", "CD2", 'PTPRC', #T cell
+                       "GNLY",    "NKG7",#NK
+                       "CD40","CD19",'MEF2C',"CD79A",#B
+                       'CD38','XBP1','IRF4',#'CD138','BLIPM',#Plasma
+                       "TPSB2","TPSAB1",  #MAST
+                       "DCN", "COL1A2",'LUM',#'COL3A1','COL1A1','CFD',#fibro
+                       'SELE',"VWF",'LYVE1')#endothelium)
+Idents(olp.integrated)<- olp.integrated$integrated_snn_res.0.1
+table(olp.integrated$integrated_snn_res.0.1)
+DotPlot(olp.integrated, features =markers.to.plot, cols = c('grey90','#DC0000FF'), # '#00A087FF'
+        dot.scale = 8) + #coord_flip()+
+  theme(axis.text = element_text(size = 18, face = 'bold'),
+        axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.6),
+        axis.title = element_blank()
+  )+
+  theme(legend.text=element_text(size=20),
+        legend.title=element_text(size=18))
+olp.integrated <- RenameIdents(olp.integrated, `0` = "NK/T" , `1` = "NK/T", 
+                               `2` = "Fibroblast",`3` = "Myeloid",`4` = "Endothelial" , 
+                               `5` ="NK/T",`6`='Plasma',`7`=  "Fibroblast",`8` = 'B_cell',
+                               `9` = 'Mast',`10` = 'Epithelial'
+                               
+)
+table(olp.integrated$integrated_snn_res.0.1,olp.integrated$pheno)
+mean(olp.integrated$nCount_RNA)
+mean(olp.integrated$nFeature_RNA)
+
+DefaultAssay(olp.integrated) <- "SCT"
+
+table(olp.integrated$pheno1) 
+
+olp.integrated$Cell_type<- Idents(olp.integrated)
+DefaultAssay(olp.integrated)<-'SCT'
+table(olp.integrated$Cell_type)
+olp.integrated$Cell_type<- factor(olp.integrated$Cell_type,
+                                  levels=c('Endothelial','Fibroblast','Mast','Plasma','B_cell',
+                                           'NK/T',  'Myeloid', 'Epithelial'))
+
+Idents(olp.integrated) <- olp.integrated$Cell_type
+
+markers.to.plot <- c(
+  'KRT5',"KRT14", "KRT19" ,#epi
+  'HLA-DPB1', 'CD14', 'ITGAM',  'CD68',#mye
+  'PTPRC',"CD2","CD3D",   #T cell
+  "NKG7", "GNLY",   #NK
+  "CD40","CD19", "CD79A",#B
+  'CD27',#Plasma'SDC1',
+  "TPSAB1", "TPSB2", #MAST
+  "COL1A2","DCN",'LUM', #fibro
+  'SELE', "VWF",'LYVE1'#endothelium
+ )
+DotPlot(olp.integrated, features =markers.to.plot, cols = c('grey90','#DC0000FF'), # '#00A087FF'
+        dot.scale = 8) + #coord_flip()+
+  theme(axis.text = element_text(size = 20, face = 'bold'),
+        axis.text.x=element_text(angle=90,hjust=1,vjust=0.6),
+        axis.title = element_blank()
+  )+
+  theme(legend.text=element_text(size=18),
+        legend.title=element_text(size=18),
+        legend.position = 'bottom')
+
+markers.to.plot <- c(
+  'LYVE1', "VWF",'SELE',#endothelium
+  "DCN", "COL1A2",'LUM',#fibro
+  "TPSB2","TPSAB1",  #MAST
+  'SDC1','CD27',#Plasma
+  'CD38','IRF4','XBP1',#Plasma
+  'CD138','BLIPM',#Plasma
+  "CD79A", "CD40","CD19",#B
+  "GNLY",    "NKG7",#NK
+  "CD3D", "CD2", 'PTPRC', #T cell
+  'ITGAM',  'CD68','SOD2',#mye
+  "KRT19" ,"KRT14",'KRT5')#epi)
+# 'MPZ','PMP2') #neurocyte
+olp.integrated$Cell_type<- factor(olp.integrated$Cell_type,
+                                  levels=c('Epithelial','Myeloid','NK/T', 
+                                           'B_cell','Plasma','Mast','Fibroblast','Endothelial'
+                                  ))
+Idents(olp.integrated) <- olp.integrated$Cell_type
+DotPlot(olp.integrated, features =markers.to.plot, cols = c('grey90','#DC0000FF'), # '#00A087FF'
+        dot.scale = 8) + coord_flip()+
+  theme(axis.text = element_text(size = 20, face = 'bold'),
+        axis.text.x=element_text(angle=90,hjust=1,vjust=0.6),
+        axis.title = element_blank()
+  )+
+  theme(legend.text=element_text(size=18),
+        legend.title=element_text(size=18))
+
+
+DotPlot(olp.integrated, features =markers.to.plot, cols = c('grey90','#DC0000FF'), # '#00A087FF'
+        dot.scale = 8) + coord_flip()+
+  theme(axis.text = element_text(size = 20, face = 'bold'),
+        axis.text.x=element_text(angle=90,hjust=1,vjust=0.6),
+        axis.title = element_blank()
+  )+
+  theme(legend.text=element_text(size=18),
+        legend.title=element_text(size=18),
+        legend.position = 'bottom')
+
+
+table(olp.integrated$Cell_type,olp.integrated$pheno)
+
+#SUBGROUP-epi
+set.seed(1234)
+olp.integrated<- readRDS('olp.integrated.rds')
+table(olp.integrated$integrated_snn_res.0.1,olp.integrated$Cell_type)
+olp.integrated_epi <- olp.integrated[,olp.integrated$Cell_type %in% 'Epithelial']
+DefaultAssay(olp.integrated_epi ) <- "integrated"
+olp.integrated_epi <- RunPCA(olp.integrated_epi, verbose = FALSE)
+ElbowPlot(olp.integrated_epi, ndims = 30)
+
+olp.integrated_epi <- RunUMAP(olp.integrated_epi , reduction = "pca", dims = 1:20,verbose = FALSE)
+
+olp.integrated_epi <- RunTSNE(olp.integrated_epi , reduction = "pca", dims = 1:20, verbose = FALSE)
+olp.integrated_epi <- FindNeighbors(olp.integrated_epi , reduction = "pca", dims = 1:20)
+olp.integrated_epi <- FindClusters(olp.integrated_epi , resolution = 0.8)
+DimPlot(olp.integrated_epi, reduction = "umap", group.by = "integrated_snn_res.0.8", label = TRUE,label.size=10)#,
+DimPlot(olp.integrated_epi, reduction = "umap", group.by = "pheno", label = TRUE)#,
+table(olp.integrated_epi$integrated_snn_res.0.3,olp.integrated_epi$pheno)
+DefaultAssay(olp.integrated_epi ) <- "SCT"
+
+cell.marker<- c(#'CDH1','KRT5',
+  #'CASP4',#'AIM2','GZMB','HMGB1','IL18','APOE',
+   'CASP1','HMGB1','IL1B',
+   #'GSDMB','GSDME','GSDMC',
+   'GSDMD'#'NLRP3','IL1B'#,,#,
+ # 'CDH1','S100A2','S100A6',
+  # 'KRT10',
+  # 'KRT14','KRT6A',   'KRT19'
+)
+Idents(olp.integrated_epi)<- olp.integrated_epi$integrated_snn_res.0.8
+DefaultAssay(olp.integrated_epi) <-'SCT'
+
+DotPlot(olp.integrated_epi, features =cell.marker, cols = c("grey", "#DC0000FF"),
+        dot.scale = 8) + #coord_flip()+
+  theme(axis.text = element_text(size = 18, face = 'bold'),
+        axis.text.x=element_text(angle=90,hjust=1,vjust=0.6),
+        axis.title=element_blank(),
+        legend.text=element_text(size=14),
+        legend.title=element_text(size=14))
+
+olp.integrated_epi <- RenameIdents(olp.integrated_epi, `0`="Other_Epi",
+                                   `1` ="Other_Epi" ,`2` = "Other_Epi", `3`= "Other_Epi",
+                                   `4` = 'Pyro_Epi',`5` = 'Pyro_Epi', `6`="Other_Epi",
+                                   `7` = 'Pyro_Epi',`8` = 'Pyro_Epi', `9`='Pyro_Epi',
+                                   `10`='Pyro_Epi', `11` ="Other_Epi" ,`12` ='Pyro_Epi', `13`= 'Pyro_Epi'
+)
+
+
+table(olp.integrated_mye$orig.ident,olp.integrated_mye$mye_type)
+
+olp.integrated_epi $epi_type<- Idents(olp.integrated_epi)
+cell.marker<- c(#'CDH1','KRT5' 'CASP1',,
+'HMGB1','GSDMD', 'CASP4', 'CASP1',
+'KRT19','KRT10',
+'KRT6A',  'KRT14'
+)
+
+DefaultAssay(olp.integrated_epi ) <- "SCT"
+DotPlot(olp.integrated_epi, features =cell.marker, cols = c("grey90", "#DC0000FF"),
+        dot.scale = 8) +coord_flip()+
+  theme(axis.text = element_text(size = 24, face = 'bold'),
+        axis.text.x=element_text(angle=0,hjust=0.5,vjust=0.6),
+        axis.title=element_blank(),
+        legend.text=element_text(size=16),
+        legend.title=element_text(size=16),
+        legend.position='right')
+#dimplot
+col<-  c("#4DBBD5FF" , "#E64B35FF" )
+table(olp.integrated_epi$epi_type)
+DimPlot(olp.integrated_epi, group.by='epi_type', 
+        reduction = "umap",label=F,label.size=6,cols=col)+
+  theme(legend.text=element_text(size=25))+
+  guides(color=guide_legend(override.aes = list(size=10)))
+
+saveRDS(olp.integrated_epi,'olp.integrated_epi.rds')
+
+olp.integrated_epi<- readRDS('./r data/rds//olp.integrated_epi.rds')
+
+
