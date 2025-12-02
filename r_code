@@ -23,16 +23,16 @@ library(patchwork)
 library(dplyr)
 library(ggplot2)
 library(glmGamPoi)
-d10x.olp1 <- Read10X("original data/EOLP-1/") #REOLP1
-d10x.olp2 <- Read10X("original data/EOLP-2/")#REOLP2
-d10x.olp3 <- Read10X("original data/NOLP-1/") #REOLP3,
-d10x.olp4 <- Read10X("original data/NOLP-2/")#NREOLP1
-d10x.olp5 <- Read10X("original data/NOLP-3/")#NREOLP2
-d10x.olp6 <- Read10X("original data/OLP01_QH/")#NREOLP3 
-d10x.olp7 <- Read10X("original data/REOLP_LSQ_1222/")#REOLP4
-d10x.olp8 <- Read10X("original data/REOLP_LJ_1229/")#REOLP5
-d10x.olp9 <- Read10X("original data/REOLP_GWF_0116/")#REOLP6
-d10x.olp10 <- Read10X("original data/NREOLP_CT_1122/")#NREOLP4
+d10x.olp1 <- Read10X("original data/ REOLP1/") #REOLP1
+d10x.olp2 <- Read10X("original data/REOLP-2/")#REOLP2
+d10x.olp3 <- Read10X("original data/REOLP-3/") #REOLP3,
+d10x.olp4 <- Read10X("original data/NREOLP-1/")#NREOLP1
+d10x.olp5 <- Read10X("original data/NREOLP-2/")#NREOLP2
+d10x.olp6 <- Read10X("original data/NREOLP-3/")#NREOLP3 
+d10x.olp7 <- Read10X("original data/REOLP-4/")#REOLP4
+d10x.olp8 <- Read10X("original data/REOLP-5/")#REOLP5
+d10x.olp9 <- Read10X("original data/REOLP-6/")#REOLP6
+d10x.olp10 <- Read10X("original data/NREOLP-4/")#NREOLP4
 saveRDS(olp.integrated_tcell,'olp.integrated_tcell.rds')
 
 d10x.normal1 <- Read10X("original data/Normal/")
